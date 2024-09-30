@@ -1,0 +1,92 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-std=c++11",
+      "-DGLEW_STATIC",
+      "-IBox2D/src",
+      "-Isrc",
+      "-c",
+      "-o",
+      "obj/Debug/Creature.o",
+      "src/Creature.cpp"
+    ],
+    "directory": "/home/lea/Documents/M1/Animation/controleMvt/tp",
+    "file": "/home/lea/Documents/M1/Animation/controleMvt/tp/src/Creature.cpp",
+    "output": "/home/lea/Documents/M1/Animation/controleMvt/tp/obj/Debug/Creature.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-std=c++11",
+      "-DGLEW_STATIC",
+      "-IBox2D/src",
+      "-Isrc",
+      "-c",
+      "-o",
+      "obj/Debug/Framework/Application.o",
+      "src/Framework/Application.cpp"
+    ],
+    "directory": "/home/lea/Documents/M1/Animation/controleMvt/tp",
+    "file": "/home/lea/Documents/M1/Animation/controleMvt/tp/src/Framework/Application.cpp",
+    "output": "/home/lea/Documents/M1/Animation/controleMvt/tp/obj/Debug/Framework/Application.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-std=c++11",
+      "-DGLEW_STATIC",
+      "-IBox2D/src",
+      "-Isrc",
+      "-c",
+      "-o",
+      "obj/Debug/Framework/Main.o",
+      "src/Framework/Main.cpp"
+    ],
+    "directory": "/home/lea/Documents/M1/Animation/controleMvt/tp",
+    "file": "/home/lea/Documents/M1/Animation/controleMvt/tp/src/Framework/Main.cpp",
+    "output": "/home/lea/Documents/M1/Animation/controleMvt/tp/obj/Debug/Framework/Main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-std=c++11",
+      "-DGLEW_STATIC",
+      "-IBox2D/src",
+      "-Isrc",
+      "-c",
+      "-o",
+      "obj/Debug/Framework/DebugDraw.o",
+      "src/Framework/DebugDraw.cpp"
+    ],
+    "directory": "/home/lea/Documents/M1/Animation/controleMvt/tp",
+    "file": "/home/lea/Documents/M1/Animation/controleMvt/tp/src/Framework/DebugDraw.cpp",
+    "output": "/home/lea/Documents/M1/Animation/controleMvt/tp/obj/Debug/Framework/DebugDraw.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-std=c++11",
+      "-DGLEW_STATIC",
+      "-IBox2D/src",
+      "-Isrc",
+      "-c",
+      "-o",
+      "obj/Debug/Motion.o",
+      "src/Motion.cpp"
+    ],
+    "directory": "/home/lea/Documents/M1/Animation/controleMvt/tp",
+    "file": "/home/lea/Documents/M1/Animation/controleMvt/tp/src/Motion.cpp",
+    "output": "/home/lea/Documents/M1/Animation/controleMvt/tp/obj/Debug/Motion.o"
+  }
+]
