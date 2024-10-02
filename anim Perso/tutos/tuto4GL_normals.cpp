@@ -89,16 +89,6 @@ int init( )
     glVertexAttribPointer(attribute, 3, GL_FLOAT, GL_FALSE, /* stride */ 0, /* offset */ 0);  // in vec3 normal;
     glEnableVertexAttribArray(attribute);
 
-/*  autre solution pour le meme resultat :
-
-    #include "buffer.h"
-
-    GLuint vao= make_vertex_format();
-
-    vertex_buffer= make_vertex_buffer(vao, glGetAttribLocation(program, "position"), 3, GL_FLOAT, mesh.vertex_buffer_size(), mesh.vertex_buffer());
-    normal_buffer= make_vertex_buffer(vao, glGetAttribLocation(program, "normal"), 3, GL_FLOAT, mesh.normal_buffer_size(), mesh.normal_buffer());
- */
-
 
 /*  creer 2 buffers pour ranger les positions et les normales est arbitraire, on peut tres bien ne creer qu'un seul buffer,
     par contre, la description du format / de l'organisation sera differente...
@@ -198,7 +188,7 @@ int draw( )
 
     GLuint location;
     location= glGetUniformLocation(program, "mvpMatrix");
-    glUniformMatrix4fv(location, 1, GL_TRUE, mvp.buffer());
+    glUniformMatrix4fv(location, 1, GL_TRUE, mvp.data());
 
     // les normales ne subissent pas tout a fait la meme transformation que les sommets
     program_uniform(program, "mvMatrix", mv.normal());

@@ -1,3 +1,4 @@
+
 #version 330
 
 #ifdef VERTEX_SHADER
@@ -5,8 +6,6 @@
 layout(location= 0) in vec3 position;
 uniform mat4 mvpMatrix;
 
-uniform mat4 mvMatrix;
-out vec3 vertex_position;
 
 #ifdef USE_TEXCOORD
     layout(location= 1) in vec2 texcoord;
@@ -19,6 +18,11 @@ out vec3 vertex_position;
     out vec3 vertex_normal;
 #endif
 
+#if defined USE_LIGHT || !defined USE_NORMAL
+    uniform mat4 mvMatrix;
+    out vec3 vertex_position;
+#endif
+
 #ifdef USE_COLOR
     layout(location= 3) in vec4 color;
     out vec4 vertex_color;
@@ -28,15 +32,17 @@ out vec3 vertex_position;
 void main( )
 {
     gl_Position= mvpMatrix * vec4(position, 1);
-
-    vertex_position= vec3(mvMatrix * vec4(position, 1));
-
+    
 #ifdef USE_TEXCOORD
     vertex_texcoord= texcoord;
 #endif
 
 #ifdef USE_NORMAL
     vertex_normal= mat3(normalMatrix) * normal;
+#endif
+
+#if defined USE_LIGHT || !defined USE_NORMAL
+    vertex_position= vec3(mvMatrix * vec4(position, 1));
 #endif
 
 #ifdef USE_COLOR
@@ -57,7 +63,6 @@ void main( )
     uniform float alpha_min= 0.3;
 #endif
 
-in vec3 vertex_position;
 
 #ifdef USE_NORMAL
     in vec3 vertex_normal;
@@ -72,7 +77,11 @@ uniform vec3 light;
 uniform vec4 light_color;
 #endif
 
-uniform vec4 mesh_color= vec4(1, 1, 1, 0);
+#if defined USE_LIGHT || !defined USE_NORMAL
+in vec3 vertex_position;
+#endif
+
+uniform vec4 mesh_color= vec4(1, 1, 1, 1);
 
 out vec4 fragment_color;
 
@@ -88,21 +97,11 @@ void main( )
     
     #ifdef USE_ALPHATEST
         if(color.a < alpha_min)
-        //~ if(length(color.rgb) < alpha_min)
             discard;
     #endif
-    
-    if(color.r + color.g + color.b == 0)    // noir
-    {
-        // fixer une couleur debug pour indiquer qu'il faut utiliser une texture avec cet objet
-        vec3 p= vertex_position * 8;
-	float d= length( p - (floor(p) + 0.5));
-	if(d > 1) d= 0;
-        color=  vec4(d*0.8*2, d*0.4*2, 0, 1);
-    }
 #endif
 
-    vec3 normal;
+    vec3 normal= vec3(0, 0, 1);
 #ifdef USE_NORMAL
     normal= normalize(vertex_normal);
 #else
@@ -111,28 +110,26 @@ void main( )
     normal= normalize(cross(t, b));
 #endif
 
-    float cos_theta;
-#ifdef USE_ALPHATEST
-    cos_theta= 1;
-#else
+#ifndef USE_ALPHATEST
+    float cos_theta= 1;
     #ifdef USE_LIGHT
-        //~ cos_theta= abs(dot(normal, normalize(light - vertex_position)));        // eclairage "double face"
         cos_theta= max(0, dot(normal, normalize(light - vertex_position)));         // eclairage, uniquement des faces bien orientees
         color= color * light_color;
     #else
-        cos_theta= dot( normalize(normal), normalize(- vertex_position) );
+        cos_theta= normal.z; //abs(dot(normal, normalize(vertex_position)));
+        //~ cos_theta= abs(dot(normal, normalize(vertex_position)));
     #endif
-#endif
-
-    color.rgb= color.rgb * cos_theta;
-
+    
     // hachure les triangles mal orientes
-    if(gl_FrontFacing == false) // if(!gl_FrontFacing) bug sur mac ?!
+    if(gl_FrontFacing == false)
     {
         ivec2 pixel= ivec2(gl_FragCoord.xy / 4) % ivec2(2, 2);
         if((pixel.x ^ pixel.y) == 0)
             color= vec4(0.8, 0.4, 0, 1);
     }
+    
+    color.rgb= color.rgb * cos_theta;
+#endif
     
     fragment_color= color;
 }

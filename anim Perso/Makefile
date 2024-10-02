@@ -2,35 +2,33 @@
 # Type "make help" for usage help
 
 ifndef config
-  config=debug64
+  config=debug
 endif
 export config
 
-PROJECTS := master_MecaSim_etudiant
+PROJECTS := master_CharAnim
 
 .PHONY: all clean help $(PROJECTS)
 
 all: $(PROJECTS)
 
-master_MecaSim_etudiant: 
-	@echo "==== Building master_MecaSim_etudiant ($(config)) ===="
-	@${MAKE} --no-print-directory -C . -f master_MecaSim_etudiant.make
+master_CharAnim: 
+	@echo "==== Building master_CharAnim ($(config)) ===="
+	@${MAKE} --no-print-directory -C build -f Makefile
 
 clean:
-	@${MAKE} --no-print-directory -C . -f master_MecaSim_etudiant.make clean
+	@${MAKE} --no-print-directory -C build -f Makefile clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
 	@echo ""
 	@echo "CONFIGURATIONS:"
-	@echo "   debug64"
-	@echo "   release64"
-	@echo "   debug32"
-	@echo "   release32"
+	@echo "   debug"
+	@echo "   release"
 	@echo ""
 	@echo "TARGETS:"
 	@echo "   all (default)"
 	@echo "   clean"
-	@echo "   master_MecaSim_etudiant"
+	@echo "   master_CharAnim"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"

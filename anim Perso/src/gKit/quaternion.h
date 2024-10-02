@@ -27,8 +27,12 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
+#include "vec.h"
+#include "mat.h"
 
-
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
+#endif
 	/*! \brief A Quaternion class
 	 *
 	 */
@@ -42,10 +46,15 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 		TQuaternion()
 		{ q[0]=q[1]=q[2]=0.0;  q[3]=1.0; }
 
-		/*! Constructor from rotation axis (non null) and angle (in radians). See also setAxisAngle(). */
+		/*! Constructor from rotation axis (non null) and angle (in degree). See also setAxisAngle(). */
 		TQuaternion(const Vec3Real& axis, const Real angle)
 		{
-			setAxisAngle(axis, angle);
+			setAxisAngleDegree(axis, angle);
+		}
+
+		void setAxisAngleDegree(const Vec3Real& axis, const Real angle)
+		{
+			setAxisAngle(axis, angle*M_PI/180.0);
 		}
 
 		TQuaternion(const Vec3Real& from, const Vec3Real& to)
@@ -113,7 +122,7 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 		/*! Sets the TQuaternion as a rotation of axis \p axis and angle \p angle (in radians).
 
 		\p axis does not need to be normalized. A null \p axis will result in an identity TQuaternion. */
-		void setAxisAngle(const Vec3Real& axis, const Real angle)
+		void setAxisAngle(const Vec3Real& axis, const Real _angle)
 		{
 			const Real norm = length(axis); // axis.norm();
 			if (norm < 1E-8)
@@ -126,6 +135,7 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 			}
 			else
 			{
+                const Real angle = _angle;
 				const Real sin_half_angle = sin(angle / 2.0);
 				q[0] = sin_half_angle*axis.x/norm;
 				q[1] = sin_half_angle*axis.y/norm;
@@ -209,9 +219,9 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 		Vec3Real axis() const
 		{
 			Vec3Real res = Vec3Real(q[0], q[1], q[2]);
-			const Real sinus = res.norm();
+			const Real sinus = length(res);
 			if (sinus > 1E-8)
-				res /= sinus;
+				res = res/sinus;
 			return (acos(q[3]) <= M_PI/2.0) ? res : -res;
 		}
 
@@ -387,7 +397,6 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 
 
 		/*! Fills \p m with the OpenGL representation of the TQuaternion rotation.
-
 		Use matrix() if you do not need to store this matrix and simply want to alter the current OpenGL
 		matrix. See also getInverseMatrix() and Frame::getMatrix(). */
         //void getMatrix(Real m[4][4]) const
@@ -408,15 +417,15 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
 			const Real q23 = 2.0l * q[2] * q[3];
 
 			m[0][0] = 1.0l - q11 - q22;
-			m[1][0] =        q01 - q23;
-			m[2][0] =        q02 + q13;
+			m[0][1] =        q01 - q23;
+			m[0][2] =        q02 + q13;
 
-			m[0][1] =        q01 + q23;
+			m[1][0] =        q01 + q23;
 			m[1][1] = 1.0l - q22 - q00;
-			m[2][1] =        q12 - q03;
+			m[1][2] =        q12 - q03;
 
-			m[0][2] =        q02 - q13;
-			m[1][2] =        q12 + q03;
+			m[2][0] =        q02 - q13;
+			m[2][1] =        q12 + q03;
 			m[2][2] = 1.0l - q11 - q00;
 
             m[0][3] = 0.0l;
@@ -429,8 +438,49 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
             m[3][3] = 1.0l;
         }
 
-        /*! Fills \p m with the OpenGL representation of the TQuaternion rotation.
+//#ifdef _WIN32
+//		template<>
+//#endif
+		void getMatrix44(Transform& m) const
+		{
+			const Real q00 = 2.0l * q[0] * q[0];
+			const Real q11 = 2.0l * q[1] * q[1];
+			const Real q22 = 2.0l * q[2] * q[2];
 
+			const Real q01 = 2.0l * q[0] * q[1];
+			const Real q02 = 2.0l * q[0] * q[2];
+			const Real q03 = 2.0l * q[0] * q[3];
+
+			const Real q12 = 2.0l * q[1] * q[2];
+			const Real q13 = 2.0l * q[1] * q[3];
+
+			const Real q23 = 2.0l * q[2] * q[3];
+
+			m.m[0][0] = 1.0l - q11 - q22;
+			m.m[0][1] = q01 - q23;
+			m.m[0][2] = q02 + q13;
+
+			m.m[1][0] = q01 + q23;
+			m.m[1][1] = 1.0l - q22 - q00;
+			m.m[1][2] = q12 - q03;
+
+			m.m[2][0] = q02 - q13;
+			m.m[2][1] = q12 + q03;
+			m.m[2][2] = 1.0l - q11 - q00;
+
+			m.m[0][3] = 0.0l;
+			m.m[1][3] = 0.0l;
+			m.m[2][3] = 0.0l;
+
+			m.m[3][0] = 0.0l;
+			m.m[3][1] = 0.0l;
+			m.m[3][2] = 0.0l;
+			m.m[3][3] = 1.0l;
+		}
+
+
+
+        /*! Fills \p m with the OpenGL representation of the TQuaternion rotation.
         Use matrix() if you do not need to store this matrix and simply want to alter the current OpenGL
         matrix. See also getInverseMatrix() and Frame::getMatrix(). */
         //void getMatrix(Real m[4][4]) const
@@ -451,15 +501,15 @@ along with gkit2light.  If not, see <http://www.gnu.org/licenses/>.
             const Real q23 = 2.0l * q[2] * q[3];
 
             m[0][0] = 1.0l - q11 - q22;
-            m[1][0] =        q01 - q23;
-            m[2][0] =        q02 + q13;
+            m[0][1] =        q01 - q23;
+            m[0][2] =        q02 + q13;
 
-            m[0][1] =        q01 + q23;
+            m[1][0] =        q01 + q23;
             m[1][1] = 1.0l - q22 - q00;
-            m[2][1] =        q12 - q03;
+            m[1][2] =        q12 - q03;
 
-            m[0][2] =        q02 - q13;
-            m[1][2] =        q12 + q03;
+            m[2][0] =        q02 - q13;
+            m[2][1] =        q12 + q03;
             m[2][2] = 1.0l - q11 - q00;
         }
 

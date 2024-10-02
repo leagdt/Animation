@@ -1,17 +1,24 @@
 
+//! \file window.cpp
+
 #include <cassert>
 #include <cstdio>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+
+#include <chrono>
 #include <vector>
 #include <set>
 #include <string>
-#include <cstdio>
-#include <cstring>
 #include <iostream>
 
 #include "glcore.h"
 #include "window.h"
+#include "files.h"
 
 
+static float aspect= 1;
 
 static int width= 0;
 static int height= 0;
@@ -22,6 +29,13 @@ int window_width( )
 int window_height( )
 {
     return height;
+}
+
+int window_msaa( )
+{
+    int n= 0;
+    SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &n);
+    return n;
 }
 
 static std::vector<unsigned char> key_states;
@@ -59,15 +73,30 @@ void clear_text_event( )
     last_text.text[0]= 0;
 }
 
-static std::string last_drop;
+static std::vector<std::string> last_drops;
+const std::vector<std::string>& drop_events( )
+{
+    return last_drops;
+}
+
 const char *drop_event( )
 {
-    return last_drop.c_str();
+    if(last_drops.empty())
+        return nullptr;
+    else
+        return last_drops.back().c_str();
 }
+
 void clear_drop_event( )
 {
-    last_drop.clear();
+    last_drops.clear();
 }
+
+void clear_drop_events( )
+{
+    last_drops.clear();
+}
+
 
 static SDL_MouseButtonEvent last_button;
 SDL_MouseButtonEvent button_event( )
@@ -91,8 +120,29 @@ void clear_wheel_event( )
 }
 
 
+//
+static std::chrono::high_resolution_clock::time_point app_start= {};
+static std::chrono::high_resolution_clock::time_point last_time= {};
+static float last_delta= 0;
+
+float global_time( )
+{
+    std::chrono::high_resolution_clock::time_point now= std::chrono::high_resolution_clock::now();
+    last_delta= float(std::chrono::duration_cast<std::chrono::microseconds>(now - last_time).count()) / float(1000);
+    last_time= now;
+    
+    return float(std::chrono::duration_cast<std::chrono::microseconds>(now - app_start).count()) / float(1000);
+}
+
+float delta_time( )
+{
+// pas super utile, a virer ?
+    return last_delta;
+}
+
 // etat de l'application.
 static int stop= 0;
+
 //! boucle de gestion des evenements de l'application.
 int run( Window window, int (*draw)() )
 {
@@ -105,7 +155,7 @@ int run( Window window, int (*draw)() )
         // dessiner
         if(draw() < 1)
             stop= 1;    // fermer l'application si draw() renvoie 0 ou -1...
-
+        
         // presenter le resultat
         SDL_GL_SwapWindow(window);
     }
@@ -113,8 +163,14 @@ int run( Window window, int (*draw)() )
     return 0;
 }
 
+static int event_count= 0;
+int last_event_count( ) { return event_count; }
+
+
 int events( Window window )
 {
+    bool resize_event= false;
+    
     // gestion des evenements
     SDL_Event event;
     while(SDL_PollEvent(&event))
@@ -125,26 +181,26 @@ int events( Window window )
                 // redimensionner la fenetre...
                 if(event.window.event == SDL_WINDOWEVENT_RESIZED)
                 {
-                    // conserve les dimensions de la fenetre
+                    // traite l'evenement apres la boucle... 
+                    resize_event= true;
+                    
+                    // conserve les proportions de la fenetre
                     width= event.window.data1;
                     height= event.window.data2;
-                    SDL_SetWindowSize(window, width, height);
-
-                    // ... et le viewport opengl
-                    glViewport(0, 0, width, height);
                 }
                 break;
-
+            
             case SDL_DROPFILE:
-                last_drop.assign(event.drop.file);
+                //~ printf("drop file '%s'\n", event.drop.file);
+                last_drops.push_back(std::string(event.drop.file));
                 SDL_free(event.drop.file);
                 break;
-
+            
             case SDL_TEXTINPUT:
                 // conserver le dernier caractere
                 last_text= event.text;
                 break;
-
+            
             case SDL_KEYDOWN:
                 // modifier l'etat du clavier
                 if((size_t) event.key.keysym.scancode < key_states.size())
@@ -152,12 +208,12 @@ int events( Window window )
                     key_states[event.key.keysym.scancode]= 1;
                     last_key= event.key;    // conserver le dernier evenement
                 }
-
+                
                 // fermer l'application
                 if(event.key.keysym.sym == SDLK_ESCAPE)
                     stop= 1;
                 break;
-
+            
             case SDL_KEYUP:
                 // modifier l'etat du clavier
                 if((size_t) event.key.keysym.scancode < key_states.size())
@@ -166,60 +222,103 @@ int events( Window window )
                     last_key= event.key;    // conserver le dernier evenement
                 }
                 break;
-
+            
             case SDL_MOUSEBUTTONDOWN:
             case SDL_MOUSEBUTTONUP:
                 last_button= event.button;
                 break;
-
+            
             case SDL_MOUSEWHEEL:
                 last_wheel= event.wheel;
                 break;
-
+            
             case SDL_QUIT:
                 stop= 1;            // fermer l'application
                 break;
         }
     }
 
+    if(resize_event)
+    {
+        int w= std::floor(height * aspect);
+        int h= height;
+        SDL_SetWindowSize(window, w, h);
+        glViewport(0, 0, w, h);
+        
+        //~ printf("[resize] %dx%d aspect %f -> %dx%d aspect %f\n", width, height, aspect, w, h, float(w) / float(h));
+        
+        width= w;
+        height= h;
+    }
+    
     return 1 - stop;
 }
 
 
 //! creation d'une fenetre pour l'application.
-Window create_window( const int w, const int h )
+Window create_window( const int w, const int h, const int major, const int minor, const int samples )
 {
     // init sdl
-    if(SDL_Init(SDL_INIT_EVERYTHING) < 0)
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0)
     {
         printf("[error] SDL_Init() failed:\n%s\n", SDL_GetError());
-        return NULL;
+        return nullptr;
     }
 
     // enregistre le destructeur de sdl
     atexit(SDL_Quit);
 
+    // configuration openGL
+#ifndef GK_OPENGLES
+    printf("creating window(%d, %d) openGL %d.%d, %d MSAA samples...\n", w, h, major, minor, samples);
+    
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
+#ifndef GK_RELEASE
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    
+    if(samples > 1)
+    {
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
+    }
+    
+#else
+    printf("creating window(%d, %d) openGL ES 3.0...\n", w, h);
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#endif
+    
     // creer la fenetre
     Window window= SDL_CreateWindow("gKit",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-    if(window == NULL)
+    if(window == nullptr)
     {
         printf("[error] SDL_CreateWindow() failed.\n");
-        return NULL;
+        return nullptr;
     }
-
+    
     // recupere l'etat du clavier
     int keys;
     const unsigned char *state= SDL_GetKeyboardState(&keys);
     key_states.assign(state, state + keys);
-
-    SDL_SetWindowDisplayMode(window, NULL);
+    
+    SDL_SetWindowDisplayMode(window, nullptr);
     SDL_StartTextInput();
 
     // conserve les dimensions de la fenetre
     SDL_GetWindowSize(window, &width, &height);
-
+    aspect= float(width) / float(height);
+    
     return window;
 }
 
@@ -232,9 +331,10 @@ void release_window( Window window )
 
 #ifndef NO_GLEW
 #ifndef GK_RELEASE
+
 //! affiche les messages d'erreur opengl. (contexte debug core profile necessaire).
 static
-void GLAPIENTRY debug( GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length,
+void DEBUGCALLBACK debug_print( GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length,
     const char *message, const void *userParam )
 {
     static std::set<std::string> log;
@@ -253,31 +353,39 @@ void GLAPIENTRY debug( GLenum source, GLenum type, unsigned int id, GLenum sever
 #endif
 
 //! cree et configure un contexte opengl
-Context create_context( Window window, const int major, const int minor )
+Context create_context( Window window )
 {
-    if(window == NULL)
-        return NULL;
-
-    // configure la creation du contexte opengl core profile, debug profile
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
-#ifndef GK_RELEASE
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-#endif
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 15);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
+    if(window == nullptr)
+        return nullptr;
+    
     Context context= SDL_GL_CreateContext(window);
-    if(context == NULL)
+    if(context == nullptr)
     {
         printf("[error] creating openGL context.\n");
-        return NULL;
+        return nullptr;
     }
-
-    SDL_GL_SetSwapInterval(1);
-
+    
+    if(SDL_GL_SetSwapInterval(-1) != 0)
+        printf("[warning] can't set adaptive vsync...\n");
+    
+    if(SDL_GL_GetSwapInterval() != -1)
+    {
+        printf("vsync ON\n");
+        SDL_GL_SetSwapInterval(1);
+    }
+    else
+        printf("adaptive vsync ON\n");
+    
+    {
+        int n= 0;
+        SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &n);
+        if(n > 1)
+            printf("MSAA %d samples\n", n);
+    }
+    
+    //
+    app_start= std::chrono::high_resolution_clock::now();
+    
 #ifndef NO_GLEW
     // initialise les extensions opengl
     glewExperimental= 1;
@@ -286,7 +394,7 @@ Context create_context( Window window, const int major, const int minor )
     {
         printf("[error] loading extensions\n%s\n", glewGetErrorString(err));
         SDL_GL_DeleteContext(context);
-        return NULL;
+        return nullptr;
     }
 
     // purge les erreurs opengl generees par glew !
@@ -297,8 +405,12 @@ Context create_context( Window window, const int major, const int minor )
     if(GLEW_ARB_debug_output)
     {
         printf("debug output enabled...\n");
+        // selectionne tous les messages
         glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-//        glDebugMessageCallbackARB(debug, NULL);
+        // desactive les messages du compilateur de shaders
+        glDebugMessageControlARB(GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_FALSE);
+
+        glDebugMessageCallbackARB(debug_print, NULL);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
     }
 #endif
@@ -312,39 +424,46 @@ void release_context( Context context )
     SDL_GL_DeleteContext(context);
 }
 
-bool file_exist(const char* filename)
+
+static std::string smartpath;
+static std::string path;
+
+const char *smart_path( const char *filename )
 {
-    FILE* f = fopen(filename,"r");
-    if (f) { fclose(f); return true; }
-    return false;
-}
+    if(exists(filename))
+        return filename;
 
-const char* smart_path(const char* filename)
-{
-    static char smartpath[512];
-
-    if (file_exist(filename)) return filename;
-
-    char * exec = SDL_GetBasePath();
-
-    strcpy(smartpath,exec);
-    strcat(smartpath,filename);
-    if (file_exist(smartpath))
+    if(path.empty())
     {
-        SDL_free(exec);
-        return smartpath;
+        // recupere la variable d'environnement, si elle existe
+        const char *envbase= std::getenv("GKIT_BASE_PATH");
+        if(envbase != nullptr)
+        {
+            path= std::string(envbase);
+            if(!path.empty() && path[path.size() -1] != '/')
+            {
+                path.append("/");       // force un /, si necessaire
+                printf("[base path] %s\n", path.c_str());
+            }
+        }
     }
-
-    strcpy(smartpath,exec);
-    strcat(smartpath, "/../");
-    strcat(smartpath,filename);
-    if (file_exist(smartpath))
+    
+    if(path.empty())
     {
-        SDL_free(exec);
-        return smartpath;
+        char *base= SDL_GetBasePath();
+        printf("[base path] %s\n", base);
+        path= base;
+        SDL_free(base);
     }
+    
+    smartpath= path + filename;
+    if(exists(smartpath.c_str()))
+        return smartpath.c_str();
 
-    SDL_free(exec);
-    std::cerr<<"smart_path: file not found="<<filename<<std::endl;
-    return NULL;
+    smartpath= path + "../" + filename;
+    if(exists(smartpath.c_str()))
+        return smartpath.c_str();
+    
+    return filename; // echec, fichier pas trouve, renvoie quand meme le fichier original. 
+    // (permet au moins d'afficher l'erreur fichier non trouve dans l'application)
 }

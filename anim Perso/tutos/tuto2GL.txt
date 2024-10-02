@@ -1,7 +1,7 @@
 
 /*! \addtogroup tuto2GL compiler et linker un shader program
 
-cf tuto2GL.cpp
+cf tuto2GL.cpp (+ tuto2GL_vertex.glsl et tuto2GL_fragment.glsl) et tuto1GL.cpp (+ tuto1GL_vertex.glsl et tuto1GL_fragment.glsl)
 
 un shader program est la même chose que d'habitude : le code exécutable crée par l'édition de liens des binaires obtenus 
 après la compilations des shaders.
@@ -24,7 +24,7 @@ la partie la plus longue est finalement la vérification et la récupération de
 _rappel :_  les objets openGL sont manipulés à travers des identifiants numériques, openGL définit le type GLuint 
 spécialement pour ça. vous pouvez repasser dans \ref interfaceC, si nécessaire.
 
-## lire les sources
+# lire les sources
 
 le plus simple en C++, renvoie une chaine de caractères std::string :
 \code
@@ -48,7 +48,7 @@ std::string read( const char *filename )
 }
 \endcode
 
-## créer et compiler les shaders
+# créer et compiler les shaders
 
 \code
 	GLenum type= GL_VERTEX_SHADER;	 // ou GL_FRAGMENT_SHADER...
@@ -68,7 +68,7 @@ puis compiler le shader :
 	glCompileShader(shader);
 \endcode
 
-## vérifier les erreurs de compilation du shader
+# vérifier les erreurs de compilation du shader
 
 un objet shader openGL maintient un état de compilation ainsi que les messages d'erreurs (et sonsource également). 
 il suffit de l'interroger avec glGetShader( ) :
@@ -106,7 +106,7 @@ la bonne taille et enfin récupérer les messsages...
 si tout c'est bien passé pour le premier shader, on peut passer au 2ieme, seul le type de shader change : ce sera
 GL_FRAGMENT_SHADER au lieu de GL_VERTEX_SHADER.
 
-## créer et linker le program
+# créer et linker le program
 
 la démarche est la même que pour les shaders, il faut indiquer au program quels shaders linker ensemble avec
 glAttachShader( ), puis vérifier les erreurs,
@@ -145,13 +145,13 @@ et éventuellement récupérer et afficher les erreurs...
 
 voila, rien de bien compliqué, mais c'est un peu long.
 
-un exemple minimaliste est dispo tuto2GL.cpp
+un exemple minimaliste est dispo tuto2GL.cpp (qui utilise les utilitaires de window.h), et tuto1GL.cpp qui montre la totalité du code.
 
 une fois que le program est correctement compilé et linké, avant de dessiner avec glDraw( ), il faut donner une valeur à
 tous ses uniforms et associer un buffer à ses attributs cf \ref tuto3GL et \ref tuto4GL. 
 il est aussi possible, pour vérifier que l'on a rien oublié, de demander au shader program quels sont les uniforms déclarés, leur nom, leur type, leur valeur, etc. pour vérifier que l'initialisation est correcte. cf \ref shader_reflect.
 
-## formatage des erreurs
+# formatage des erreurs
 
 par contre les messages d'erreurs sont très succints et n'affichent qu'un numéro de ligne sans aucun contexte, ce qui est assez pénible 
 pour corriger l'erreur.
@@ -238,7 +238,7 @@ vous pouvez compiler les shaders comme vous voulez et utiliser uniquement progra
 _pour les curieux :_ le source est dispo program.cpp, fonctions print_line( ) et print_errors( ).
 
 
-## utilitaires : program.h
+# utilitaires : program.h
 
 \ref program.h fournit une fonction permettant de compiler plusieurs shaders écrits dans le même fichier, cf read_program( ). 
 \code
@@ -273,44 +273,5 @@ void main( )
 }
 #endif
 \endcode
-
-
-## utilitaires : shader_kit 
-
-autre solution, shader_kit.cpp peut être utilisé comme compilateur de shader, il affiche les erreurs sous cette forme un peu 
-plus lisible, et permet de recharger et de recompiler le shader en appuyant sur la touche R. ça permet de corriger
-interactivement le source du shader en le modifiant dans un éditeur.
-
-shader_kit est un 'bac à sable' permettant d'écrire et de tester des shaders assez facilement. il permet aussi de charger 
-un objet .obj, des textures et permet de déplacer la camera à la souris. 
-
-comme il n'est pas possible d'écrire une solution totalement générique, shader_kit à des limites :
-	- 1 seul shader program, écrit dans un seul fichier .glsl, avec les \#ifdef VERTEX_SHADER, etc, voir plus haut,
-	- il n'est pas obligatoire de charger un objet, dans ce cas, il fonctionne comme [shadertoy.com](https://www.shadertoy.com/),
-	- charge 1 seul objet,
-	- plusieurs textures 2d rgba8, jusqu'à la limite d'openGL, 16 ou 32 selon les machines :
-		- uniform sampler2D texture0;
-		- uniform sampler2D texture1; etc, en fonction du nombre d'images chargées,
-	
-il définit également les valeurs de plusieurs uniforms :
-	- uniform float time; le temps en milli secondes,
-	- uniform vec3 mouse; la position x, y de la souris dans la fenêtre, et l'état du bouton gauche, mouse.z (!= 0 enfoncé, == 0 pas enfoncé),
-	- uniform vec3 motion; le déplacement x, y de la souris, et l'état du bouton gauche, motion.z (!= 0 enfoncé, == 0 pas enfoncé),
-	- uniform vec2 viewport; les dimensions de l'image / de la fenêtre,
-	- ainsi que les transformations standards et leurs inverses :
-		- uniform mat4 mvpMatrix, mvpInvMatrix; la transformation standard pour passer du repère local au repère projectif,
-		- uniform mat4 mvMatrix; la composition de model et view, repère local vers le repère caméra,
-		- uniform mat4 normalMatrix; même transformation que mv, mais pour les normales des sommets,
-		- uniform mat4 modelMatrix, modelInvMatrix;
-		- uniform mat4 viewMatrix, viewInvMatrix;
-		- uniform mat4 projectionMatrix, projectionInvMatrix;
-
-malgré ces limites, on peut écrire des choses interressantes :
-	- un shader qui éclaire un objet texturé :
-		\image html mesh_kit.png
-	- un lancer de rayons classique :
-		\image html trace_kit.png
-	- un lancer de rayons sur champ de distance :
-		\image html march_kit.png
 
  */

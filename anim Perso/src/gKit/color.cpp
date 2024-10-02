@@ -1,5 +1,31 @@
 
+#include <cmath>
+#include <algorithm>
+
 #include "color.h"
+
+
+float Color::power( ) const
+{
+    return (r+g+b) / 3;
+}
+
+float Color::max( ) const
+{
+    return std::max(r, std::max(g, std::max(b, float(0))));
+}
+
+Color linear( const Color& color )
+{
+    const float g= float(1 / 2.2);
+    return Color(std::pow(color.r, g), std::pow(color.g, g), std::pow(color.b, g), color.a);
+}
+
+Color gamma( const Color& color )
+{
+    const float invg= float(2.2);
+    return Color(std::pow(color.r, invg), std::pow(color.g, invg), std::pow(color.b, invg), color.a);
+}
 
 
 Color Black( )
@@ -25,6 +51,11 @@ Color Green( )
 Color Blue( )
 {
     return Color(0, 0, 1);
+}
+
+Color Yellow( )
+{
+    return Color(1, 1, 0);
 }
 
 
