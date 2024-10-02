@@ -5,7 +5,7 @@ Ce dossier contient trois projets d'animation mettant en œuvre différentes tec
 ### 1. Projet de Contrôle de Mouvement
 
 **Description :**  
-Ce projet est axé sur la manipulation et le contrôle de mouvement d'un objet à l'écran. L'objectif est de créer des mouvements fluides et réalistes avec des interactions basiques (par exemple, contrôle via le clavier ou la souris).
+Ce projet est axé sur la manipulation et le contrôle de mouvement d'un objet à l'écran. L'objectif est de créer des mouvements fluides et réalistes avec des interactions basiques (par exemple, contrôle via le clavier).
 
 ---
 
