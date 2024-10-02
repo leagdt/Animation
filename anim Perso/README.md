@@ -1,12 +1,11 @@
 # Projet d'Animation de Tissu - Système Masses-Ressorts
 
-Ce projet implémente une animation de tissu en utilisant le **système masses-ressorts**. Il simule un tissu flexible en prenant en compte les forces de gravité et de tension entre les points du tissu. Le projet utilise **SDL**, **GLEW**, et **SDL2_image** pour le rendu et la gestion des images. La compilation et la génération des Makefiles se font avec **Premake4**.
-
 ## Description
 
 Ce projet implémente une animation de tissu en utilisant le **système masses-ressorts**. L'animation du tissu est réalisée à travers une grille de points reliés par des ressorts. Chaque point représente une masse, et les ressorts relient les masses voisines pour simuler l'élasticité du tissu. Le projet prend en compte :
 - **Forces de gravité** qui attirent les masses vers le bas.
 - **Forces de ressort** qui tentent de maintenir la forme du tissu en opposition à la gravité.
+- **Simulation du vent** qui applique une force supplémentaire sur chaque particule.
 
 L'objectif est de simuler un comportement réaliste de déformation d'un tissu sous l'effet de la gravité et des interactions entre les ressorts.
 
@@ -30,7 +29,7 @@ L'objectif est de simuler un comportement réaliste de déformation d'un tissu s
 Avant de compiler et d'exécuter le projet, assurez-vous que les bibliothèques suivantes sont installées sur votre système :
 
 - **SDL2**
-- **GLEW** (OpenGL Extension Wrangler)
+- **GLEW**
 - **SDL2_image**
 - **Premake4**
 
@@ -39,5 +38,34 @@ Avant de compiler et d'exécuter le projet, assurez-vous que les bibliothèques 
 ```bash
 sudo apt-get install libsdl2-dev libsdl2-image-dev libglew-dev premake4
 ```
+
+### Compiler et exécuter le projet 
+
+1. **Compiler le projet :**
+
+   Dans le terminal, dans le répertoire du projet, exécutez la commande suivante pour génerer le makefile :
+
+  ```bash
+   premake4 --file=master_MecaSim.lua gmake
+   ```
+
+  Puis exécuter la commande suivante pour compiler le projet : 
+   ```bash
+   make
+   ```
+
+4. **Executer le projet:**
+  Dans le terminal, dans le répertoire du projet, exécutez la commande suivante pour exécuter le programme :
+
+   ```bash
+   ./bin/master_MecaSim_etudiant
+   ```
+
+5. **Nettoyer les fichiers compilés:**
+  Dans le terminal, exécutez la commande suivante pour nettoyer les fichiers objets et l'éxécutable généré :
+  
+  ```bash
+   make clean
+   ```
 
 
