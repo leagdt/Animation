@@ -54,14 +54,14 @@ sudo apt-get install libsdl2-dev libsdl2-image-dev libglew-dev premake4
    make
    ```
 
-4. **Executer le projet:**
+2. **Executer le projet:**
   Dans le terminal, dans le répertoire du projet, exécutez la commande suivante pour exécuter le programme :
 
    ```bash
    ./bin/master_MecaSim_etudiant
    ```
 
-5. **Nettoyer les fichiers compilés:**
+3. **Nettoyer les fichiers compilés:**
   Dans le terminal, exécutez la commande suivante pour nettoyer les fichiers objets et l'éxécutable généré :
   
   ```bash
